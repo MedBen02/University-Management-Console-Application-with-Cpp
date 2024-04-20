@@ -1,10 +1,61 @@
-
 #include <iostream>
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
 
 using namespace std;
+
+class Etudiant {
+    string nom;
+    int id;
+    
+public:
+    static vector<Etudiant> etudiants;
+
+    Etudiant(string nom, int id) : nom(nom), id(id) {}
+
+    string getNom() const { return nom; }
+    int getId() const { return id; }
+
+    void creerEtudiant(string nom, int id) {
+        Etudiant etudiant(nom, id);
+        etudiants.push_back(etudiant);
+    }
+
+    void modifierNom(int id, const string& newNom) {
+        for (auto& etudiant : etudiants) {
+            if (etudiant.id == id) {
+                etudiant.nom = newNom;
+            }
+        }
+    }
+
+    void supprimerEtudiant(int id) {
+        for (auto it = etudiants.begin(); it != etudiants.end(); ++it) {
+            if (it->id == id) {
+                etudiants.erase(it);
+                break;
+            }
+        }
+    }
+
+    void chercherEtudiant(int id) const {
+        for (const auto& etudiant : etudiants) {
+            if (etudiant.id == id) {
+                cout << "Nom : " << etudiant.nom << ", ID : " << etudiant.id << endl;
+            }
+        }
+    }
+
+    void afficherEtudiants() const {
+        for (const auto& etudiant : etudiants) {
+            cout << "Nom : " << etudiant.nom << ", ID : " << etudiant.id << endl;
+        }
+    }
+
+    ~Etudiant() {}
+};
 
 enum TypePersonnel {
     ENSEIGNANT,
@@ -84,9 +135,10 @@ class Cours {
     string departement;
     int niveau;
     Enseignant* enseignant;
-    static vector<Cours> coursCollection;
+    vector<Etudiant*> inscrits;
 
 public:
+    static vector<Cours> coursCollection;
 
     Cours(const string& nom, int id, const string& departement, int niveau)
         : nom(nom), id(id), departement(departement), niveau(niveau), enseignant(nullptr) {}
@@ -127,6 +179,10 @@ public:
         }
     }
 
+     void inscrireEtudiant(Etudiant* etudiant) {
+        inscrits.push_back(etudiant);
+    }
+
     void chercherCours(int id) const {
         for (const auto& c : coursCollection) {
             if (c.id == id) {
@@ -139,7 +195,10 @@ public:
                     cout << ", Enseignant : Aucun" << endl;
                 }
             }
+            else {
+                cout << "Aucun cours trouvé avec l'ID : " << id << endl;
         }
+    }
     }
 
     void afficherCours() const {
@@ -154,9 +213,102 @@ public:
             }
         }
     }
+    int getId() const {
+        return id;
+    }
+    string getNom() const {
+        return nom;
+    }
 };
 
+
+class Inscriptions {
+    
+
+    unordered_map<int, vector<Etudiant*>> inscriptions;
+
+    public:
+   
+
+    void inscrireEtudiant(Cours& cours, Etudiant* etudiant) {
+        cours.inscrireEtudiant(etudiant);
+        inscriptions[cours.getId()].push_back(etudiant);
+        cout << "L'étudiant " << etudiant->getNom() << " a été inscrit au cours " << cours.getNom() << endl;
+    }
+
+    
+
+    void validerInscriptions(int coursId) {
+        auto it = inscriptions.find(coursId);
+        if (it != inscriptions.end()) {
+            cout << "Valider les inscriptions pour le cours " << coursId << endl;
+        } else {
+            cout << "Aucune inscription trouvée pour le cours " << coursId << endl;
+        }
+    }
+
+    // Méthode pour afficher les étudiants inscrits à un cours
+    void afficherEtudiantsIncrits(int coursId) const {
+        auto it = inscriptions.find(coursId);
+        if (it != inscriptions.end()) {
+            cout << "Étudiants inscrits au cours " << coursId << " : ";
+            for (const auto& etudiant : it->second) {
+                cout << etudiant->getNom() << " ";
+                cout << etudiant->getId() << " ";
+            }
+            cout << endl;
+        } else {
+            cout << "Aucun étudiant n'est inscrit au cours " << coursId << endl;
+        }
+    }
+};
+
+
+
+void menuInscriptions(Inscriptions& inscriptions, const vector<Cours>& coursCollection) {
+    int choix;
+    int coursId;
+    int etudiantId;
+
+    do {
+        cout << "\nMenu Inscriptions" << endl;
+        cout << "1. Inscrire un étudiant à un cours" << endl;
+        cout << "2. Valider les inscriptions d'un cours" << endl;
+        cout << "3. Afficher les étudiants inscrits à un cours" << endl;
+        cout << "4. Retour" << endl;
+        cout << "Entrez votre choix : ";
+        cin >> choix;
+
+        switch (choix) {
+            case 1:
+                cout << "Entrez l'ID du cours : ";
+                cin >> coursId;
+                cout << "Entrez l'ID de l'étudiant à inscrire : ";
+                cin >> etudiantId;
+                inscriptions.inscrireEtudiant(const_cast<Cours&>(coursCollection[coursId]), &Etudiant::etudiants[etudiantId]);
+                break;
+            case 2:
+                cout << "Entrez l'ID du cours à valider : ";
+                cin >> coursId;
+                inscriptions.validerInscriptions(coursId);
+                break;
+            case 3:
+                cout << "Entrez l'ID du cours pour afficher les étudiants inscrits : ";
+                cin >> coursId;
+                inscriptions.afficherEtudiantsIncrits(coursId);
+                break;
+            case 4:
+                cout << "Retour au menu principal." << endl;
+                break;
+            default:
+                cout << "Choix invalide, veuillez réessayer." << endl;
+        }
+    } while (choix != 4);
+}
+
 vector<Cours> Cours::coursCollection;
+vector<Etudiant> Etudiant::etudiants;
+
 int main() {
     vector<Personnel> personnels;
     Cours cours("", 0, "", 0);
@@ -170,7 +322,9 @@ int main() {
         cout << "\nMenu" << endl;
         cout << "1. Menu Personnel Universitaire" << endl;
         cout << "2. Menu Cours" << endl;
-        cout << "3. Quitter" << endl;
+        cout << "3. Menu Inscription" << endl;
+        cout<<  "4. Menu Etudiant"<<endl;
+        cout << "5. Quitter" << endl;
         cout << "Entrez votre choix : ";
         cin >> choix;
 
@@ -312,7 +466,72 @@ int main() {
                         cout << "Choix invalide, veuillez réessayer." << endl;
                 }
             } while (choixCours != 7);
+
         } else if (choix == 3) {
+            Inscriptions inscriptions; // Make the coursCollection member accessible
+            menuInscriptions(inscriptions, Cours::coursCollection);
+        }else if(choix==4){
+             int choix;
+    string nom;
+    int id;
+    Etudiant etudiant("", 0);
+    
+    do {
+        cout << "\nMenu" << endl;
+        cout << "1. Creer des etudiants" << endl;
+        cout << "2. Modifier le nom d'un étudiant" << endl;
+        cout << "3. Supprimer un étudiant" << endl;
+        cout << "4. Chercher un étudiant" << endl;
+        cout << "5. Afficher tous les étudiants" << endl;
+        cout << "6. Quitter" << endl;
+        cout << "Entrez votre choix : ";
+        cin >> choix;
+
+        switch (choix) {
+            case 1: {
+                int nombre;
+                cout << "Entrez le nombre d'etudiants à créer : ";
+                cin >> nombre;
+                for (int i = 0; i < nombre; i++) {
+                    cout << " ID de l'etudiant " << i + 1 << ": "<<endl;
+                    id=i+1;
+                    cout << "Entrez le nom de l'étudiant " << i + 1 << ": "<<endl;
+                    cin >> nom;
+                    etudiant.creerEtudiant(nom, id);
+                }
+                break;
+            }
+            case 2:
+                cout << "Entrez ID de l'étudiant à modifier : "<<endl;
+                cin >> id;
+                cout << "Entrez le nouveau nom : "<<endl;
+                cin >> nom;
+                etudiant.modifierNom(id, nom);
+                break;
+            case 3:
+                cout << "Entrez ID de l'étudiant à supprimer : ";
+                cin >> id;
+                etudiant.supprimerEtudiant(id);
+                break;
+            case 4:
+                cout << "Entrez ID de l'étudiant à chercher : ";
+                cin >> id;
+                etudiant.chercherEtudiant(id);
+                break;
+            case 5:
+                cout << "Tous les étudiants : " << endl;
+                etudiant.afficherEtudiants();
+                break;
+            case 6:
+                cout << "Au revoir!" << endl;
+                break;
+            default:
+                cout << "Choix invalide, veuillez réessayer." << endl;
+        }
+    } while (choix != 6);
+        } 
+        
+        else if (choix == 5) {
             cout << "Au revoir !" << endl;
             break;
         } else {
