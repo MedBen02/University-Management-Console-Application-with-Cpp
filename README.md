@@ -200,5 +200,4 @@ For issues and questions:
 ---
 
 **Author**: Bensaid Mohammad
-**Version**: 1.0.0  
 **Last Updated**: 2024
